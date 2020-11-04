@@ -15,6 +15,12 @@ public class Player : MonoBehaviour
     [SerializeField] private float sensitivity;
     [SerializeField] private Buttons buttons;
 
+    public float Speed
+    {
+        get => speed;
+        set => speed = value;
+    }
+
     // Update is called once per frame
     void Update()
     {

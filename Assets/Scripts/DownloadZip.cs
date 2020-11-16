@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Security;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -30,27 +31,45 @@ public class DownloadZip : MonoBehaviour
                 Debug.Log("Error: " + request.error);
             else
             {
-                string outPath = Path.Combine(Application.persistentDataPath, "Task.zip");
-                File.WriteAllBytes(outPath, request.downloadHandler.data);
+                try
+                {
+                    string outPath = Path.Combine(Application.persistentDataPath, "Task.zip");
+                    File.WriteAllBytes(outPath, request.downloadHandler.data);
 
-                ZipFile.ExtractToDirectory(outPath, Application.persistentDataPath);
+                    ZipFile.ExtractToDirectory(outPath, Application.persistentDataPath);
 
-                string inJsonPath = Path.Combine(Application.persistentDataPath, "settings.json");
-                NotMyData data = JsonUtility.FromJson<NotMyData>(File.ReadAllText(inJsonPath));
+                    string inJsonPath = Path.Combine(Application.persistentDataPath, "settings.json");
+                    NotMyData data = JsonUtility.FromJson<NotMyData>(File.ReadAllText(inJsonPath));
 
-                byte[] image = Convert.FromBase64String(data.base64Texture);
-                string outJpgPath = Path.Combine(Application.persistentDataPath, "image.jpg");
-                File.WriteAllBytes(outJpgPath, image);
+                    byte[] image = Convert.FromBase64String(data.base64Texture);
+                    string outJpgPath = Path.Combine(Application.persistentDataPath, "image.jpg");
+                    File.WriteAllBytes(outJpgPath, image);
 
-                byte[] textureData = File.ReadAllBytes(outJpgPath);
-                Texture2D texture = new Texture2D(2, 2);
-                texture.LoadImage(textureData);
+                    byte[] textureData = File.ReadAllBytes(outJpgPath);
+                    Texture2D texture = new Texture2D(2, 2);
+                    texture.LoadImage(textureData);
 
-                var player = GameObject.Find("Player");
-                player.GetComponent<Player>().Speed = data.speed;
-                player.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_BumpMap", texture);
+                    var player = GameObject.Find("Player");
+                    player.GetComponent<Player>().Speed = data.speed;
+                    player.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_BumpMap", texture);
+                }
+                catch(DirectoryNotFoundException e)
+                {
+                    EditorUtility.DisplayDialog("Error", "Directory not found", "OK");
+                }
+                catch(IOException e)
+                {
+                    EditorUtility.DisplayDialog("Error", e.Message, "OK");
+                }
+                catch(SecurityException e)
+                {
+                    EditorUtility.DisplayDialog("Error", "The caller does not have the required permission", "OK");
+                }
+                catch(FormatException e)
+                {
+                    EditorUtility.DisplayDialog("Error", "Format exception", "OK");
+                }
             }
         };
-
     }
 }
